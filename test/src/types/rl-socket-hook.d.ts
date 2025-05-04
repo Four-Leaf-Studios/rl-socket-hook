@@ -5,7 +5,7 @@ import {
   StatfeedEvent,
   GoalScoredEvent,
   MatchEndedEvent,
-} from "./types"; // adjust path if needed
+} from "@four-leaf-studios/rl-socket-hook"; // adjust path if needed
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { EventPayloads as EP } from "@four-leaf-studios/rl-socket-hook";
