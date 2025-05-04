@@ -1,7 +1,7 @@
 import Overlay from "./Overlay";
 import WebsocketData from "./WebsocketData";
-import { RLProvider } from "../../dist/RLProvider";
 import RenderCounter from "./RenderCounter";
+import { RLProvider } from "../../dist/RLProvider";
 
 function App() {
   return (

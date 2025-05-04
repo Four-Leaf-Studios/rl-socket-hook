@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react"; // ✅ Handles jsx-runtime
 
 export default {
   input: {
+    index: "src/index.ts",
     useRocketLeagueSocket: "src/useRocketLeagueSocket.ts",
     RLProvider: "src/RLProvider.tsx",
   },
