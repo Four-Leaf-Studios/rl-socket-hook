@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from "react";
 
-type EventMap = {
+export type EventMap = {
   [eventName: string]: any;
 };
 

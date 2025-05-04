@@ -1,17 +1,17 @@
 # Rocket League WebSocket Hook
 
-A React hook to connect to Rocket League's WebSocket server (`ws://localhost:49122`) and subscribe to real-time in-game events.
+A React hook + context provider to connect to Rocket League's WebSocket server (`ws://localhost:49122`) and subscribe to real-time in-game events with fine-grained reactivity.
 
 ## Installation
 
 ```bash
-npm install @your-scope/rl-socket-hook
+npm install @four-leaf-studios/rl-socket-hook
 ```
 
-## Usage
+## Usage with Hook
 
 ```tsx
-import useRocketLeagueSocket from "@your-scope/rl-socket-hook";
+import useRocketLeagueSocket from "@four-leaf-studios/rl-socket-hook";
 
 const Overlay = () => {
   const data = useRocketLeagueSocket();
@@ -28,12 +28,30 @@ const Overlay = () => {
 };
 ```
 
+## Usage with Provider + useEvent
+
+```tsx
+import { RLProvider, useEvent } from "@four-leaf-studios/rl-socket-hook";
+
+const Scoreboard = () => {
+  const gameState = useEvent("game:update_state");
+
+  return <p>Blue Score: {gameState?.game?.teams[0]?.score}</p>;
+};
+
+const App = () => (
+  <RLProvider>
+    <Scoreboard />
+  </RLProvider>
+);
+```
+
 ## Features
 
-- Persistent event state for multiple game events
-- Works with all standard Rocket League WebSocket events
-- Typed with TypeScript
-- Simple React Hook API
+- ⚽ Real-time Rocket League WebSocket data
+- 🧠 React Context + memoized selectors via `useEvent`
+- 🛠️ TypeScript support out of the box
+- 🔌 WebSocket endpoint configurable
 
 ## License
 

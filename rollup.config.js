@@ -1,22 +1,27 @@
 import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
-import { terser } from "rollup-plugin-terser";
+import react from "@vitejs/plugin-react"; // ✅ Handles jsx-runtime
 
 export default {
-  input: "src/useRocketLeagueSocket.ts",
+  input: {
+    useRocketLeagueSocket: "src/useRocketLeagueSocket.ts",
+    RLProvider: "src/RLProvider.tsx",
+  },
   output: {
-    file: "dist/index.js",
+    dir: "dist",
     format: "esm",
     sourcemap: true,
-    plugins: [terser()],
+    preserveModules: true,
+    preserveModulesRoot: "src",
   },
-  external: ["react"],
+  external: ["react", "react/jsx-runtime"],
   plugins: [
     resolve(),
+    react(), // ✅ handles JSX + react/jsx-runtime correctly
     typescript({
       tsconfig: "./tsconfig.json",
-      declaration: false, // we already emit declarations via tsc
-      outDir: "dist",
+      declaration: true,
+      declarationDir: "dist",
     }),
   ],
 };

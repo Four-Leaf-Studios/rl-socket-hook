@@ -1,9 +1,8 @@
 import React from "react";
-import useRocketLeagueSocket from "../../dist/index";
+import { useEvent } from "../../dist/RLProvider";
 
 export default function Overlay() {
-  const data = useRocketLeagueSocket();
-  const gameState = data["game:update_state"];
+  const gameState = useEvent("game:update_state");
 
   const timeConvert = (timee: number) => {
     if (isNaN(timee)) return "0:00";
