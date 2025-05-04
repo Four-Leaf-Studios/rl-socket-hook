@@ -2,6 +2,7 @@ import Overlay from "./Overlay";
 import WebsocketData from "./WebsocketData";
 import RenderCounter from "./RenderCounter";
 import { RLProvider } from "@four-leaf-studios/rl-socket-hook";
+import Scoreboard from "./Scoreboard";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         selector={(state) => state?.players}
       />
       <Overlay />
+      <Scoreboard />
       <WebsocketData />
     </RLProvider>
   );
