@@ -1,5 +1,5 @@
+import { useEvent } from "@four-leaf-studios/rl-socket-hook";
 import { memo, useRef } from "react";
-import { useEvent } from "@four-leaf-studios/rl-socket-hook/RLProvider";
 
 export const RenderCounter = memo(({ event }: { event: string }) => {
   const data = useEvent(event);

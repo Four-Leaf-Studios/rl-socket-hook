@@ -1,5 +1,5 @@
+import { useEvent } from "@four-leaf-studios/rl-socket-hook";
 import React from "react";
-import { useEvent } from "../../dist/RLProvider";
 
 export default function Overlay() {
   const gameState = useEvent("game:update_state");
