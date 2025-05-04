@@ -7,6 +7,9 @@ import {
   MatchEndedEvent,
 } from "./types"; // adjust path if needed
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { EventPayloads as EP } from "@four-leaf-studios/rl-socket-hook";
+
 // Must match your runtime import…
 declare module "@four-leaf-studios/rl-socket-hook" {
   interface EventPayloads {

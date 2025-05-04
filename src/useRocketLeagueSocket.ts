@@ -27,7 +27,7 @@ const normalizeEvent = (raw: any): [string, any][] => {
   return [];
 };
 
-const useRocketLeagueSocket = (url: string = "ws://localhost:49122") => {
+export const useRocketLeagueSocket = (url: string = "ws://localhost:49122") => {
   const [state, dispatch] = useReducer(reducer, {});
 
   useEffect(() => {

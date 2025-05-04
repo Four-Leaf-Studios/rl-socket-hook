@@ -1,5 +1,10 @@
 import { memo, useRef } from "react";
-import { useEventSelector } from "@four-leaf-studios/rl-socket-hook";
+import {
+  PayloadStorage,
+  useEventSelector,
+} from "@four-leaf-studios/rl-socket-hook";
+
+export type UseEventSelector = typeof useEventSelector;
 
 type RenderCounterProps<E extends keyof PayloadStorage, U> = {
   event: E;
@@ -7,7 +12,7 @@ type RenderCounterProps<E extends keyof PayloadStorage, U> = {
 };
 
 export const RenderCounter = memo(
-  <E extends keyof PayloadStorage, U>({
+  <E extends keyof PayloadStorage & string, U>({
     event,
     selector,
   }: RenderCounterProps<E, U>) => {

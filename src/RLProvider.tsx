@@ -8,25 +8,26 @@ import React, {
   useCallback,
 } from "react";
 import { useSyncExternalStore } from "react";
+import { EventPayloads } from "./types";
 
 // <-- Open interface for module augmentation
-export interface EventPayloads {}
 
 type Subscriber = () => void;
 
 /**
  * Internal storage type: partial mapping of known event keys to payloads
  */
-type PayloadStorage = Partial<EventPayloads>;
+export type PayloadStorage = Partial<EventPayloads>;
 
 interface Store {
-  getSnapshot: (
-    eventName: keyof PayloadStorage
-  ) => PayloadStorage[keyof PayloadStorage] | undefined;
-  subscribe: (
-    eventName: keyof PayloadStorage,
+  // <-- generic methods!
+  getSnapshot<E extends keyof PayloadStorage>(
+    eventName: E
+  ): PayloadStorage[E] | undefined;
+  subscribe<E extends keyof PayloadStorage>(
+    eventName: E,
     callback: Subscriber
-  ) => () => void;
+  ): () => void;
 }
 
 export const RLContext = createContext<Store | null>(null);
@@ -102,7 +103,8 @@ export function useEvent<E extends keyof PayloadStorage>(
   const store = useContext(RLContext);
   if (!store) throw new Error("useEvent must be inside <RLProvider>");
 
-  return useSyncExternalStore(
+  // 2) (optional) explicitly tell TS what snapshot type is
+  return useSyncExternalStore<PayloadStorage[E] | undefined>(
     (cb) => store.subscribe(eventName, cb),
     () => store.getSnapshot(eventName)
   );

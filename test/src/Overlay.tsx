@@ -1,5 +1,4 @@
 import { useEvent } from "@four-leaf-studios/rl-socket-hook";
-import React from "react";
 
 export default function Overlay() {
   const gameState = useEvent("game:update_state");
@@ -16,8 +15,8 @@ export default function Overlay() {
   const time = gameState?.game?.time_seconds ?? 0;
   const players = gameState?.players ?? {};
 
-  const bluePlayers = Object.values(players).filter((p: any) => p.team === 0);
-  const orangePlayers = Object.values(players).filter((p: any) => p.team === 1);
+  const bluePlayers = Object.values(players).filter((p) => p.team === 0);
+  const orangePlayers = Object.values(players).filter((p) => p.team === 1);
 
   return (
     <div
@@ -97,7 +96,7 @@ export default function Overlay() {
         className="w-full absolute top-4 flex items-center justify-between"
       >
         <div className="flex flex-col">
-          {bluePlayers.map((p: any) => (
+          {bluePlayers.map((p) => (
             <div
               key={p.id}
               className="min-w-[307px] py-[6px] pl-[26px] pr-[9px] bg-neutral-900"
@@ -118,7 +117,7 @@ export default function Overlay() {
         </div>
 
         <div className="flex flex-col">
-          {orangePlayers.map((p: any) => (
+          {orangePlayers.map((p) => (
             <div
               key={p.id}
               className="min-w-[307px] py-[6px] pr-[26px] pl-[9px] bg-neutral-900"

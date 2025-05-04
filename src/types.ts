@@ -33,6 +33,7 @@ export interface GameInfo {
   };
   time: number;
   winner: string;
+  time_seconds: number;
 }
 
 export interface PlayerLocation extends Vector3 {
@@ -131,7 +132,7 @@ export interface MatchEndedEvent {
 }
 
 // top‐level mapping of event names → payload types
-export type EventPayloads = {
+export interface EventPayloads {
   "sos:version": string;
   "game:match_created": string;
   "game:initialized": string;
@@ -147,4 +148,4 @@ export type EventPayloads = {
   "game:match_ended": MatchEndedEvent;
   "game:podium_start": string;
   "game:match_destroyed": string;
-};
+}
