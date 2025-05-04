@@ -1,3 +1,3 @@
 // src/index.ts
-export { RLProvider, useEvent } from "./RLProvider";
+export { RLProvider, useEvent, useEventSelector } from "./RLProvider";
 export { default as useRocketLeagueSocket } from "./useRocketLeagueSocket";

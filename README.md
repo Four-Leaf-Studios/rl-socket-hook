@@ -28,7 +28,7 @@ const Overlay = () => {
 };
 ```
 
-## Usage with Provider + useEvent
+## Usage with Provider + `useEvent`
 
 ```tsx
 import { RLProvider, useEvent } from "@four-leaf-studios/rl-socket-hook";
@@ -46,12 +46,60 @@ const App = () => (
 );
 ```
 
+## Usage with `useEventSelector`
+
+When you need to subscribe to just a slice of the payload and only rerender when that slice changes, use `useEventSelector`. It defaults to deep‐equality checks but you can pass a custom comparator.
+
+```tsx
+import {
+  RLProvider,
+  useEventSelector,
+} from "@four-leaf-studios/rl-socket-hook";
+
+function PlayersRenderCounter() {
+  const players = useEventSelector(
+    "game:update_state",
+    (state) => state?.players ?? []
+  );
+
+  return (
+    <div>
+      <h2>Players:</h2>
+      <pre>{JSON.stringify(players, null, 2)}</pre>
+    </div>
+  );
+}
+
+const App = () => (
+  <RLProvider>
+    <PlayersRenderCounter />
+  </RLProvider>
+);
+```
+
+### API
+
+### `useEventSelector`
+
+```ts
+function useEventSelector<E extends keyof PayloadStorage, U>(
+  eventName: E,
+  selector: (payload: PayloadStorage[E] | undefined) => U,
+  isEqual?: (a: U, b: U) => boolean
+): U;
+```
+
+- **`eventName`**: The key of the event to subscribe to.
+- **`selector`**: A function that receives the full event payload (or `undefined`) and returns the piece of data you care about.
+- **`isEqual`** _(optional)_: Custom comparator for previous vs. next selector results. Defaults to a built-in deepEqual.
+
 ## Features
 
 - ⚽ Real-time Rocket League WebSocket data
-- 🧠 React Context + memoized selectors via `useEvent`
+- 🧠 React Context + fine-grained selectors via `useEventSelector`
+- ⏱️ Subscribe to full payloads with `useEvent`
 - 🛠️ TypeScript support out of the box
-- 🔌 WebSocket endpoint configurable
+- 🔌 Configurable WebSocket endpoint
 
 ## License
 

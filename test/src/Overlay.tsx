@@ -94,7 +94,7 @@ export default function Overlay() {
 
       <div
         id="players"
-        className="w-full fixed top-4 flex items-center justify-between"
+        className="w-full absolute top-4 flex items-center justify-between"
       >
         <div className="flex flex-col">
           {bluePlayers.map((p: any) => (
@@ -142,7 +142,7 @@ export default function Overlay() {
         </div>
       </div>
 
-      <div id="bottomBar" className="w-full flex fixed bottom-0">
+      <div id="bottomBar" className="w-full flex absolute bottom-0">
         <div className="px-5 bg-[#c8a92e]">
           <p className="font-semibold uppercase">Username</p>
           <div

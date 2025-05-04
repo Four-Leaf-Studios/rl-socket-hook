@@ -6,7 +6,10 @@ import { RLProvider } from "@four-leaf-studios/rl-socket-hook";
 function App() {
   return (
     <RLProvider>
-      <RenderCounter event="game:pre_countdown_begin" />
+      <RenderCounter
+        event={"game:update_state"}
+        selector={(state) => state?.players}
+      />
       <Overlay />
       <WebsocketData />
     </RLProvider>
