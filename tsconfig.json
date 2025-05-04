@@ -4,11 +4,14 @@
     "module": "ESNext",
     "lib": ["DOM", "ESNext"],
     "declaration": true,
+    "declarationDir": "dist",
+    "emitDeclarationOnly": true,
     "outDir": "dist",
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "strict": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "importHelpers": true
   },
   "include": ["src"]
 }
