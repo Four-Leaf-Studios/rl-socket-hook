@@ -1,8 +1,8 @@
 import Overlay from "./Overlay";
-import WebsocketData from "./WebsocketData";
 import RenderCounter from "./RenderCounter";
 import { RLProvider } from "@four-leaf-studios/rl-socket-hook";
 import Scoreboard from "./Scoreboard";
+import WebsocketData from "@four-leaf-studios/rl-socket-hook";
 
 function App() {
   return (

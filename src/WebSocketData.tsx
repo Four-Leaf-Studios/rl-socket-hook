@@ -1,7 +1,6 @@
-import React from "react";
-import { useRocketLeagueSocket } from "@four-leaf-studios/rl-socket-hook";
+import useRocketLeagueSocket from "./useRocketLeagueSocket";
 
-const WebsocketData = () => {
+export const WebsocketData = () => {
   const data = useRocketLeagueSocket();
 
   return (
