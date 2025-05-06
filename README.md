@@ -1,6 +1,30 @@
 # @four-leaf-studios/rl-socket-hook
 
-A tiny React wrapper around a Rocket League WebSocket plugin (ws://localhost:49122) that provides three simple hooks and a provider for subscribing to live in-game events by name (e.g. "game:update_state", "game:goal_scored", etc.).
+A tiny React wrapper around a Rocket League WebSocket plugin (`ws://localhost:49122`). It provides:
+
+- **`<RLProvider>`**: React context provider for WebSocket events.
+- **`useEvent`**: Subscribe to entire event payloads.
+- **`useEventSelector`**: Subscribe to specific slices of event payloads.
+- **`useRocketLeagueSocket`**: Low-level hook for raw event data.
+
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Quick Start](#quick-start)
+3. [Core API](#core-api)
+   - [RLProvider](#rlprovider)
+   - [useEvent](#useevent)
+   - [useEventSelector](#useeventselector)
+   - [useRocketLeagueSocket](#userocketleaguesocket)
+4. [Examples](#examples)
+   - [Overlay Component](#overlay-component)
+   - [Scoreboard](#scoreboard)
+   - [Raw Event Dump](#raw-event-dump)
+5. [TypeScript Support](#typescript-support)
+   - [Built-in Types](#built-in-types)
+   - [Extending EventPayloads](#extending-eventpayloads)
+6. [Contributing](#contributing)
+7. [License](#license)
 
 ## Installation
 
@@ -10,228 +34,180 @@ npm install @four-leaf-studios/rl-socket-hook
 yarn add @four-leaf-studios/rl-socket-hook
 ```
 
-## Exports & Types
+## Quick Start
 
-```ts
+```tsx
 import {
   RLProvider,
   useEvent,
   useEventSelector,
-  UseEventSelector,
-  EventSelectorProps,
-  EventPayloads,
-  PayloadStorage,
 } from "@four-leaf-studios/rl-socket-hook";
-```
-
-## Usage
-
-### `<RLProvider>`
-
-Wrap your application (or subtree) so that the WebSocket connection is established and a React context is provided.
-
-```tsx
-import { RLProvider } from "@four-leaf-studios/rl-socket-hook";
 
 function App() {
-  return <RLProvider url="ws://localhost:49122">{/* children */}</RLProvider>;
+  return (
+    <RLProvider url="ws://localhost:49122">
+      <Scoreboard />
+      <Overlay />
+    </RLProvider>
+  );
 }
 ```
+
+## Core API
+
+### `RLProvider`
+
+Wrap your app to initialize the WebSocket connection and provide context.
+
+```tsx
+<RLProvider url="ws://localhost:49122">{children}</RLProvider>
+```
+
+- **`url`** (string): WebSocket URL. Default: `ws://localhost:49122`.
+- **`children`**: React nodes.
+
+---
 
 ### `useEvent(eventName)`
 
-Subscribe to the _entire_ payload of a given event.
+Subscribe to the full payload of an event.
 
 ```tsx
-import { useEvent } from "@four-leaf-studios/rl-socket-hook";
-
-function Overlay() {
-  const gameState = useEvent("game:update_state");
-  if (!gameState) return null;
-  return <div>Blue score: {gameState.game.teams[0].score}</div>;
-}
+const gameState = useEvent("game:update_state");
 ```
+
+- **Parameters**:
+  - `eventName`: key from `EventPayloads`.
+- **Returns**: Payload object or `undefined`.
+
+---
 
 ### `useEventSelector(eventName, selector, isEqual?)`
 
-```tsx
-import { useEventSelector } from "@four-leaf-studios/rl-socket-hook";
+Subscribe to a specific slice of the payload to minimize re-renders.
 
-const score = useEventSelector(
+```tsx
+const blueScore = useEventSelector(
   "game:update_state",
-  (s) => s?.game.teams[0].score
+  (s) => s.game.teams[0].score ?? 0
 );
 ```
+
+- **Parameters**:
+  - `eventName`: string key.
+  - `selector`: `(payload) => slice`.
+  - `isEqual?`: optional custom equality function.
+- **Returns**: Selected slice value.
+
+---
+
+### `useRocketLeagueSocket`
+
+Low-level hook returning a map of all event payloads.
+
+```tsx
+import { useRocketLeagueSocket } from "@four-leaf-studios/rl-socket-hook";
+const allEvents = useRocketLeagueSocket();
+```
+
+- **Returns**: `{ [eventName]: payload }`.
 
 ## Examples
 
 ### Overlay Component
 
+Full overlay UI with scores and players.
+
 ```tsx
-import React from "react";
-import { useEvent } from "@four-leaf-studios/rl-socket-hook";
-
-export default function Overlay() {
+function Overlay() {
   const gameState = useEvent("game:update_state");
+  if (!gameState) return null;
 
-  const timeConvert = (timee: number) => {
-    if (isNaN(timee)) return "0:00";
-    const min = Math.floor(timee / 60);
-    const sec = timee % 60;
-    return `${min}:${sec.toString().padStart(2, "0")}`;
-  };
-
-  const blueScore = gameState?.game?.teams?.[0]?.score ?? 0;
-  const orangeScore = gameState?.game?.teams?.[1]?.score ?? 0;
-  const time = gameState?.game?.time_seconds ?? 0;
-  const players = gameState?.players ?? {};
-
-  const bluePlayers = Object.values(players).filter((p) => p.team === 0);
-  const orangePlayers = Object.values(players).filter((p) => p.team === 1);
-
-  return (
-    <div
-      className="h-screen text-white bg-transparent"
-      style={{
-        width: 1920,
-        height: 1080,
-        background: "blue",
-        position: "relative",
-      }}
-    >
-      {/* scoreboard and players UI */}
-    </div>
-  );
+  const time = formatTime(gameState.game.time_seconds);
+  const blueScore = gameState.game.teams[0].score;
+  const orangeScore = gameState.game.teams[1].score;
+  // ...
 }
 ```
 
-### useEventSelector Scoreboard (Subscribe to only the events needed to prevent rerenders).
+---
+
+### Scoreboard
+
+Render only necessary fields:
 
 ```tsx
-import React from "react";
-import { useEventSelector } from "@four-leaf-studios/rl-socket-hook";
-
-export default function Scoreboard() {
-  // Subscribe only to blue and orange scores & match time
+function Scoreboard() {
   const blueScore = useEventSelector(
     "game:update_state",
-    (s) => s?.game.teams[0].score ?? 0
+    (s) => s.game.teams[0].score ?? 0
   );
   const orangeScore = useEventSelector(
     "game:update_state",
-    (s) => s?.game.teams[1].score ?? 0
+    (s) => s.game.teams[1].score ?? 0
   );
-  const timeSeconds = useEventSelector(
+  const time = useEventSelector(
     "game:update_state",
-    (s) => s?.game.time_seconds ?? 0
+    (s) => s.game.time_seconds ?? 0
   );
-
-  const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
 
   return (
     <div className="flex items-center space-x-4 p-4 bg-neutral-800 text-white">
       <span>🔵 {blueScore}</span>
-      <span>⏱️ {formatTime(timeSeconds)}</span>
+      <span>⏱️ {formatTime(time)}</span>
       <span>🟠 {orangeScore}</span>
     </div>
   );
 }
 ```
 
-### WebsocketData Component
+---
+
+### Raw Event Dump
+
+Debug all incoming events:
 
 ```tsx
-import React from "react";
-import { useRocketLeagueSocket } from "@four-leaf-studios/rl-socket-hook";
-
-const WebsocketData = () => {
+function RawDump() {
   const data = useRocketLeagueSocket();
-
-  return (
-    <div style={{ fontFamily: "monospace", padding: "1rem" }}>
-      <h1>Rocket League Live Events</h1>
-      {Object.entries(data).map(([event, payload]) => (
-        <div
-          key={event}
-          style={{
-            border: "1px solid #ccc",
-            marginBottom: "1rem",
-            padding: "0.5rem",
-            borderRadius: "4px",
-            backgroundColor: "#f9f9f9",
-          }}
-        >
-          <h2>{event}</h2>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-            {JSON.stringify(payload, null, 2)}
-          </pre>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export default WebsocketData;
+  return <pre>{JSON.stringify(data, null, 2)}</pre>;
+}
 ```
 
-## Customizing your event types
+## TypeScript Support
 
-By default, `@four-leaf-studios/rl-socket-hook` ships a full `EventPayloads` mapping of every Rocket League event → payload type. You can:
+### Built-in Types
 
-1. **Import** any of those payload types directly for your own helpers or props.
-2. **Declaration-merge** `EventPayloads` to add, remove, or override exactly the subset of events you care about.
-
----
-
-### 1. Importing built-in payload types
+All event payloads are typed in the `EventPayloads` interface. Import as needed:
 
 ```ts
-// anywhere in your TS code
 import type {
-  Vector3,
   GameUpdateState,
-  BallHitEvent,
-  StatfeedEvent,
   GoalScoredEvent,
-  MatchEndedEvent,
   EventPayloads,
 } from "@four-leaf-studios/rl-socket-hook";
-
-// e.g. reuse a type for your own selector props:
-type MyScoreSelector = (s: EventPayloads["game:update_state"]) => number;
 ```
 
----
+### Extending `EventPayloads`
 
-### 2. Declaration-merging `EventPayloads`
-
-Create a `.d.ts` file (e.g. `src/types/rl-socket-hook.d.ts`) alongside your TS config:
+Use declaration merging to override or extend event types:
 
 ```ts
 // src/types/rl-socket-hook.d.ts
-import type {
-  GameUpdateState,
-  BallHitEvent,
-  StatfeedEvent,
-  GoalScoredEvent,
-  MatchEndedEvent,
-} from "@four-leaf-studios/rl-socket-hook";
+import type { GameUpdateState } from "@four-leaf-studios/rl-socket-hook";
 
 declare module "@four-leaf-studios/rl-socket-hook" {
   interface EventPayloads {
-    // only include or override the events you need:
     "game:update_state": GameUpdateState;
-    "game:ball_hit": BallHitEvent;
-    "game:statfeed_event": StatfeedEvent;
-    "game:goal_scored": GoalScoredEvent;
-    "game:match_ended": MatchEndedEvent;
-
-    // you can still add any others if desired:
-    "sos:version": string;
+    "my:custom_event": { foo: string };
   }
 }
 ```
+
+## Contributing
+
+PRs welcome. Please open issues for features or bugs.
+
+## License
+
+MIT © Four Leaf Studios
