@@ -103,16 +103,20 @@ const blueScore = useEventSelector(
 
 ### `useRocketLeagueSocket`
 
-Low-level hook returning a map of all event payloads.
+> **Note:** This hook **opens its own WebSocket connection**. If you are already using `<RLProvider>`, **do not** use `useRocketLeagueSocket` together—it will create a second connection. Instead, use `useEvent` or `useEventSelector` within the RLProvider context. Use `useRocketLeagueSocket` only when you need a standalone socket (e.g., in a custom provider).
 
 ```tsx
 import { useRocketLeagueSocket } from "@four-leaf-studios/rl-socket-hook";
-const allEvents = useRocketLeagueSocket();
+
+function CustomProviderComponent() {
+  const allEvents = useRocketLeagueSocket();
+  // ...custom handling...
+}
 ```
 
-- **Returns**: `{ [eventName]: payload }`.
+- **Returns**: An object mapping event names to payloads: `{ [eventName]: payload }`.
 
-## Examples
+## Examples## Examples
 
 ### Overlay Component
 
