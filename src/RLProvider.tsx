@@ -8,19 +8,12 @@ import React, {
   useCallback,
 } from "react";
 import { useSyncExternalStore } from "react";
-import { EventPayloads } from "./types";
-
-// <-- Open interface for module augmentation
+import { PayloadStorage } from "./types";
+import useRocketLeagueSocket from "./useRocketLeagueSocket";
 
 type Subscriber = () => void;
 
-/**
- * Internal storage type: partial mapping of known event keys to payloads
- */
-export type PayloadStorage = Partial<EventPayloads>;
-
 interface Store {
-  // <-- generic methods!
   getSnapshot<E extends keyof PayloadStorage>(
     eventName: E
   ): PayloadStorage[E] | undefined;
@@ -32,59 +25,34 @@ interface Store {
 
 export const RLContext = createContext<Store | null>(null);
 
-interface RLProviderProps {
-  children: ReactNode;
-  /** WebSocket URL (default: ws://localhost:49122) */
-  url?: string;
-}
-
-export const RLProvider: React.FC<RLProviderProps> = ({
-  children,
+export const RLProvider: React.FC<{ url?: string; children: ReactNode }> = ({
   url = "ws://localhost:49122",
+  children,
 }) => {
-  // Strongly-typed storage of known events
+  // 1) pull in every event => payload map
+  const allEvents = useRocketLeagueSocket(url);
+
+  // 2) same refs and subscriber logic as before
   const dataRef = useRef<PayloadStorage>({});
-  const subscribersRef = useRef<Record<string, Subscriber[]>>({});
+  const subsRef = useRef<Record<string, Subscriber[]>>({});
 
+  // 3) whenever the hook’s state changes, push into the dataRef + notify
   useEffect(() => {
-    const socket = new WebSocket(url);
+    for (const [evt, payload] of Object.entries(allEvents)) {
+      dataRef.current[evt as keyof PayloadStorage] = payload;
+      (subsRef.current[evt] || []).forEach((cb) => cb());
+    }
+  }, [allEvents]);
 
-    socket.onmessage = (e) => {
-      try {
-        const raw = JSON.parse(e.data);
-        const entries: [string, any][] = Array.isArray(raw)
-          ? raw
-          : raw.event && raw.data
-          ? [[raw.event, raw.data]]
-          : Object.entries(raw as object);
-
-        for (const [eventName, payload] of entries) {
-          // store payload
-          (dataRef.current as any)[eventName] = payload;
-          // notify subscribers
-          (subscribersRef.current[eventName] ?? []).forEach((cb) => cb());
-        }
-      } catch {
-        console.error("Invalid WS data");
-      }
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, [url]);
-
-  // Expose stable store API
+  // 4) expose the same context store API
   const store = useMemo<Store>(
     () => ({
       getSnapshot: (eventName) => dataRef.current[eventName],
       subscribe: (eventName, callback) => {
-        const subs = (subscribersRef.current[eventName] ??= []);
-        subs.push(callback);
+        const arr = (subsRef.current[eventName] ??= []);
+        arr.push(callback);
         return () => {
-          subscribersRef.current[eventName] = subs.filter(
-            (c) => c !== callback
-          );
+          subsRef.current[eventName] = arr.filter((c) => c !== callback);
         };
       },
     }),

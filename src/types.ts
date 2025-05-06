@@ -149,3 +149,8 @@ export interface EventPayloads {
   "game:podium_start": string;
   "game:match_destroyed": string;
 }
+
+/**
+ * Internal storage type: partial mapping of known event keys to payloads
+ */
+export type PayloadStorage = Partial<EventPayloads>;
