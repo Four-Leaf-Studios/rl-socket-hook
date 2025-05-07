@@ -1,3 +1,4 @@
+// src/RLProvider.tsx
 import React, {
   createContext,
   ReactNode,
@@ -21,49 +22,71 @@ interface Store {
     eventName: E,
     callback: Subscriber
   ): () => void;
+  send(event: string, data: any): void;
+  readyState: number;
+  error: Event | null;
 }
 
 export const RLContext = createContext<Store | null>(null);
 
-export const RLProvider: React.FC<{ url?: string; children: ReactNode }> = ({
-  url = "ws://localhost:49122",
-  children,
-}) => {
-  // 1) pull in every event => payload map
-  const allEvents = useRocketLeagueSocket(url);
+export const RLProvider: React.FC<{
+  url?: string;
+  children: ReactNode;
+}> = ({ url = "ws://localhost:49122", children }) => {
+  // 1) pull in every event & helpers from the single socket hook
+  const {
+    events: allEvents,
+    send,
+    readyState,
+    error,
+  } = useRocketLeagueSocket<PayloadStorage>(url);
 
-  // 2) same refs and subscriber logic as before
-  const dataRef = useRef<PayloadStorage>({});
+  // 2) Use a loose-typed ref to avoid union-vs-intersection complaints
+  const dataRef = useRef<Record<string, any>>({});
   const subsRef = useRef<Record<string, Subscriber[]>>({});
 
-  // 3) whenever the hook’s state changes, push into the dataRef + notify
+  // 3) Sync incoming allEvents into dataRef and notify subscribers
   useEffect(() => {
-    for (const [evt, payload] of Object.entries(allEvents)) {
-      dataRef.current[evt as keyof PayloadStorage] = payload;
-      (subsRef.current[evt] || []).forEach((cb) => cb());
-    }
+    // Force evt to be keyof PayloadStorage for type-narrowing
+    const keys = Object.keys(allEvents) as Array<keyof PayloadStorage>;
+    keys.forEach((evt) => {
+      const payload = allEvents[evt];
+      // write into our record (string index)
+      dataRef.current[evt as string] = payload;
+      // notify anyone subscribed to this key
+      (subsRef.current[evt as string] || []).forEach((cb) => cb());
+    });
   }, [allEvents]);
 
-  // 4) expose the same context store API
+  // 4) Build the same Store API, casting when reading back
   const store = useMemo<Store>(
     () => ({
-      getSnapshot: (eventName) => dataRef.current[eventName],
+      getSnapshot: (eventName) =>
+        // cast from any back to the correct PayloadStorage type
+        dataRef.current[eventName as string] as
+          | PayloadStorage[typeof eventName]
+          | undefined,
       subscribe: (eventName, callback) => {
-        const arr = (subsRef.current[eventName] ??= []);
+        const arr = (subsRef.current[eventName as string] ??= []);
         arr.push(callback);
         return () => {
-          subsRef.current[eventName] = arr.filter((c) => c !== callback);
+          subsRef.current[eventName as string] = arr.filter(
+            (c) => c !== callback
+          );
         };
       },
+      send,
+      readyState,
+      error,
     }),
-    []
+    [send, readyState, error]
   );
 
   return <RLContext.Provider value={store}>{children}</RLContext.Provider>;
 };
 
 /**
- * Subscribe to the full event payload. Returns `PayloadStorage[E] | undefined`.
+ * Subscribe to the full payload of an event.
  */
 export function useEvent<E extends keyof PayloadStorage>(
   eventName: E
@@ -71,16 +94,13 @@ export function useEvent<E extends keyof PayloadStorage>(
   const store = useContext(RLContext);
   if (!store) throw new Error("useEvent must be inside <RLProvider>");
 
-  // 2) (optional) explicitly tell TS what snapshot type is
   return useSyncExternalStore<PayloadStorage[E] | undefined>(
     (cb) => store.subscribe(eventName, cb),
     () => store.getSnapshot(eventName)
   );
 }
 
-/**
- * Tiny deep-equal for JavaScript values
- */
+/** Tiny deep-equal for selector comparisons */
 function deepEqual(a: any, b: any): boolean {
   if (Object.is(a, b)) return true;
   if (
@@ -91,25 +111,18 @@ function deepEqual(a: any, b: any): boolean {
   ) {
     return false;
   }
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
+  const aKeys = Object.keys(a),
+    bKeys = Object.keys(b);
   if (aKeys.length !== bKeys.length) return false;
-  for (const key of aKeys) {
-    if (!deepEqual(a[key], (b as any)[key])) return false;
-  }
-  return true;
+  return aKeys.every((key) => deepEqual(a[key], (b as any)[key]));
 }
 
 /**
- * Subscribe to a selected slice of the event payload. Only re-renders when that slice changes.
- * Uses a built-in deep-equality check by default (no lodash).
+ * Subscribe to a selected slice of the event payload. Re-renders only on actual changes.
  */
 export function useEventSelector<E extends keyof PayloadStorage, U>(
-  /** Event key to subscribe to */
   eventName: E,
-  /** Selector that picks a slice of the payload */
   selector: (v: PayloadStorage[E] | undefined) => U,
-  /** Equality function to compare selector results; defaults to deepEqual */
   isEqual: (a: U, b: U) => boolean = deepEqual
 ): U {
   const store = useContext(RLContext)!;
@@ -122,8 +135,7 @@ export function useEventSelector<E extends keyof PayloadStorage, U>(
 
   const getSnapshot = useCallback(() => {
     const raw = store.getSnapshot(eventName);
-    const next = selector(raw as PayloadStorage[E] | undefined);
-    // deep-equal by default
+    const next = selector(raw);
     if (
       lastRef.current.val !== undefined &&
       isEqual(next, lastRef.current.val)
