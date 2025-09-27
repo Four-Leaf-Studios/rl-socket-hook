@@ -3,6 +3,14 @@
   "version": "1.2.5",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/four-leaf-studios/rl-socket-hook.git"
+  },
+  "homepage": "https://github.com/four-leaf-studios/rl-socket-hook#readme",
+  "bugs": {
+    "url": "https://github.com/four-leaf-studios/rl-socket-hook/issues"
+  },
   "files": [
     "dist"
   ],
